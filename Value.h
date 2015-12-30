@@ -33,6 +33,10 @@ public:
     Value(Map* v);
     Value(const Value& v);
 
+//    Value& operator= (int v);
+//    Value& operator= (const Value& other);
+//    Value& operator= (const Value& other);
+//    Value& operator= (const Value& other);
     Value& operator= (const Value& other);
 
     void set(int v);

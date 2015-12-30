@@ -12,11 +12,11 @@ Value::~Value() {
     clear();
 }
 
-Value::Value(int v)  { set(v); }
-Value::Value(Str* v) { set(v); }
-Value::Value(Vec* v) { set(v); }
-Value::Value(Map* v) { set(v); }
-Value::Value(const Value& v) { set(v); }
+Value::Value(int v) : Value()  { set(v); }
+Value::Value(Str* v) : Value() { set(v); }
+Value::Value(Vec* v) : Value() { set(v); }
+Value::Value(Map* v) : Value() { set(v); }
+Value::Value(const Value& v) : Value() { set(v); }
 
 Value& Value::operator= (const Value& other) {
     set(other);

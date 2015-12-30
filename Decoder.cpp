@@ -1,142 +1,132 @@
-//#include "Decoder.h"
-//
-//using namespace std;
-//using namespace proto;
-//
-//Decoder::Decoder()
-//: _offset(0) {
-//}
-//
-//int Decoder::decode(const rapidjson::Document& doc, const ByteArray& bytes, Map& dict) {
-//    uint16_t id = bytes.readInt16(0);
-//    _offset += 2;
-//
-//    auto proto = loader->getProtoById(id);
-//    if(proto == nullptr) {
-//        return -1;
-//    }
-//
-//    dict["_proto_name_"] = (*proto)["name"].GetString();
-//    readStruct(*proto, bytes, dict);
-//
-//    return 0;
-//}
-//
-//int Decoder::readStruct(const rapidjson::Value& fields, const ByteArray& bytes, Map& dict) {
-//    int result = 0;
-//
-//    auto& array = fields["field"];
-//    for(int i = 0; i < array.Size(); i++) {
-//        string field(array[i].GetString());
-//
-//        auto subs = _loader->split(field, ' ');
-//        auto& name = subs[0];
-//        auto& type = subs[1];
-//
-//        if(type == "list") {
-//            ValueVector item;
-//            result += readList(subs, 2, bytes, item);
-//            dict[name] = item;
-//        }
-//        else if(type == "struct") {
-//            auto struc = _loader->getProtoByName(subs[2]);
-//            if(struc == nullptr) {
-//                return -1;
-//            }
-//            Map item;
-//            result += readStruct(*struc, bytes, item);
-//            dict[name] = item;
-//        }
-//        else if(type == "enum") {
-//            if(!fields.HasMember("enum")) {
-//                return -1;
-//            }
-//            string item;
-//            result += readEnum(fields["enum"], bytes, item);
-//            dict[name] = item;
-//        }
-//        else {
-//            Value item;
-//            result += readPrime(type, bytes, item);
-//            dict[name] = item;
-//        }
-//
-//        if(result != 0) {
-//            return -1;
-//        }
-//    }
-//    return result;
-//}
-//
-//int Decoder::readList(const std::vector<std::string>& subs, int index, const ByteArray& bytes, ValueVector& array) {
-//    // 读取数组长度
-//    uint16_t len = bytes.readInt16(_offset);
-//    _offset += 2;
-//
-//    // 读取数组每一项
-//    auto& type = subs[index];
-//    int result = 0;
-//
-//    if(type == "list") {
-//        for(int i = 0; i < len; ++i) {
-//            ValueVector item;
-//            result += readList(subs, index+1, bytes, item);
-//            if(result != 0) {
-//                return -1;
-//            }
-//            array.push_back(Value(item));
-//        }
-//    }
-//    else if(type == "struct") {
-//        auto struc = _loader->getProtoByName(subs[index+1]);
-//        for(int i = 0; i < len; ++i) {
-//            Map item;
-//            result += readStruct(*struc, bytes, item);
-//            if(result != 0) {
-//                return -1;
-//            }
-//            array.push_back(Value(item));
-//        }
-//    }
-//    else {
-//        for(int i = 0; i < len; ++i) {
-//            Value item;
-//            result += readPrime(type, bytes, item);
-//            if(result != 0) {
-//                return -1;
-//            }
-//            array.push_back(item);
-//        }
-//    }
-//    return result;
-//}
-//
-//int Decoder::readEnum(const rapidjson::Value& enums, const ByteArray& bytes, string& value) {
-//    int value_int = static_cast<int>(bytes.readInt8(_offset));
-//    _offset += 1;
-//
-//    for(auto it = enums.MemberonBegin(); it != enums.MemberonEnd(); ++it) {
-//        if(it->value.GetInt() == value_int) {
-//            value = it->name.GetString();
-//            return 0;
-//        }
-//    }
-//    return -1;
-//}
-//
-//int Decoder::readPrime(const std::string& type, const ByteArray& bytes, Value& value) {
-//    if(type == "int") {
-//        value = static_cast<int>(bytes.readInt32(_offset));
-//        _offset += 4;
-//    }
-//    else if(type == "string") {
-//        int len = 0;
-//        value = bytes.readString(_offset, len);
-//        _offset += len + 1;
-//    }
-//    else {
-//        log("unknown type: %s", type.c_str());
-//        return -1;
-//    }
-//    return 0;
-//}
+#include "Decoder.h"
+
+using namespace std;
+using namespace proto;
+
+#define CHECK_RESULT(res) do {\
+    int r = res;\
+    if(r != 0) {\
+        return r;\
+    }\
+} while(0);
+
+#define CHECK_RESULT_FREE(res, item) do {\
+    int r = res;\
+    if(r != 0) {\
+        delete item;\
+        return r;\
+    }\
+} while(0);
+
+Decoder::Decoder(Loader* loader) {
+    _loader = loader;
+}
+
+Decoder::~Decoder() {
+}
+
+int Decoder::decode(ByteArray& bytes, string& name, Map* dict) {
+    int id = bytes.rInt16();
+    auto proto = _loader->getProtoById(id);
+    if(proto == nullptr) {
+        return -1;
+    }
+
+    name = proto->name();
+    readStruct(bytes, proto, dict);
+    return 0;
+}
+
+int Decoder::readStruct(ByteArray& bytes, Proto* struc, Map* dict) {
+    if(struc == nullptr) {
+        return -1;
+    }
+    auto fields = struc->fields();
+    for(auto& field : *fields) {
+        auto& name = field.name();
+        auto type = field.typeIter();
+
+        if(*type == "struct") {
+            auto sub_struc = _loader->getProtoByName(*(type+1));
+            auto item = new Map();
+            CHECK_RESULT_FREE(readStruct(bytes, sub_struc, item), item);
+            dict->insert(Map::value_type(name, Value(item)));
+        }
+        else if(*type == "list") {
+            auto item = new Vec();
+            CHECK_RESULT_FREE(readList(bytes, type+1, struc->enums(), item), item);
+            dict->insert(Map::value_type(name, Value(item)));
+        }
+        else if(*type == "enum") {
+            auto item = new string();
+            CHECK_RESULT_FREE(readEnum(bytes, struc->enums(), item), item);
+            dict->insert(Map::value_type(name, Value(item)));
+        }
+        else {
+            Value item;
+            CHECK_RESULT(readPrime(bytes, type, &item));
+            dict->insert(Map::value_type(name, item));
+        }
+    }
+    return 0;
+}
+
+int Decoder::readList(ByteArray& bytes, const TypeIter type, const EnumMap* enums, Vec* values) {
+    int len = bytes.rInt16();
+    if(*type == "struct") {
+        auto struc = _loader->getProtoByName(*(type+1));
+        for(int i = 0; i < len; i++) {
+            auto item = new Map();
+            CHECK_RESULT_FREE(readStruct(bytes, struc, item), item);
+            values->push_back(Value(item));
+        }
+    }
+    else if(*type == "list") {
+        for(int i = 0; i < len; i++) {
+            auto item = new Vec();
+            CHECK_RESULT_FREE(readList(bytes, type+1, enums, item), item);
+            values->push_back(Value(item));
+        }
+    }
+    else if(*type == "enum") {
+        for(int i = 0; i < len; i++) {
+            auto item = new string();
+            CHECK_RESULT_FREE(readEnum(bytes, enums, item), item);
+            values->push_back(Value(item));
+        }
+    }
+    else {
+        for(int i = 0; i < len; i++) {
+            Value item;
+            CHECK_RESULT(readPrime(bytes, type, &item));
+            values->push_back(item);
+        }
+    }
+    return 0;
+}
+
+int Decoder::readEnum(ByteArray& bytes, const EnumMap* enums, string* value) {
+    int value_int = static_cast<int>(bytes.rInt8());
+    for(auto& e : *enums) {
+        if(e.second == value_int) {
+            *value = e.first;
+            return 0;
+        }
+    }
+    return -1;
+}
+
+int Decoder::readPrime(ByteArray& bytes, const TypeIter type, Value* value) {
+    if(*type == "int") {
+        value->set(static_cast<int>(bytes.rInt32()));
+    }
+    else if(*type == "string") {
+        auto str = new string(bytes.rString());
+        value->set(str);
+    }
+    else {
+        printf("unknown type: %s\n", type->c_str());
+        return -1;
+    }
+    return 0;
+}
