@@ -25,7 +25,7 @@ Decoder::Decoder(Loader* loader) {
 Decoder::~Decoder() {
 }
 
-int Decoder::decode(ByteArray& bytes, string& name, Map* dict) {
+int Decoder::decode(const ByteArray& bytes, string& name, Map* dict) {
     int id = bytes.rInt16();
     auto proto = _loader->getProtoById(id);
     if(proto == nullptr) {
@@ -33,11 +33,11 @@ int Decoder::decode(ByteArray& bytes, string& name, Map* dict) {
     }
 
     name = proto->name();
-    readStruct(bytes, proto, dict);
+    readStruct(bytes, dict, proto);
     return 0;
 }
 
-int Decoder::readStruct(ByteArray& bytes, Proto* struc, Map* dict) {
+int Decoder::readStruct(const ByteArray& bytes, Map* value, const Proto* struc) {
     if(struc == nullptr) {
         return -1;
     }
@@ -49,63 +49,63 @@ int Decoder::readStruct(ByteArray& bytes, Proto* struc, Map* dict) {
         if(*type == "struct") {
             auto sub_struc = _loader->getProtoByName(*(type+1));
             auto item = new Map();
-            CHECK_RESULT_FREE(readStruct(bytes, sub_struc, item), item);
-            dict->insert(Map::value_type(name, Value(item)));
+            CHECK_RESULT_FREE(readStruct(bytes, item, sub_struc), item);
+            value->insert(Map::value_type(name, Value(item)));
         }
         else if(*type == "list") {
             auto item = new Vec();
-            CHECK_RESULT_FREE(readList(bytes, type+1, struc->enums(), item), item);
-            dict->insert(Map::value_type(name, Value(item)));
+            CHECK_RESULT_FREE(readList(bytes, item, struc->enums(), type+1), item);
+            value->insert(Map::value_type(name, Value(item)));
         }
         else if(*type == "enum") {
             auto item = new string();
-            CHECK_RESULT_FREE(readEnum(bytes, struc->enums(), item), item);
-            dict->insert(Map::value_type(name, Value(item)));
+            CHECK_RESULT_FREE(readEnum(bytes, item, struc->enums()), item);
+            value->insert(Map::value_type(name, Value(item)));
         }
         else {
             Value item;
-            CHECK_RESULT(readPrime(bytes, type, &item));
-            dict->insert(Map::value_type(name, item));
+            CHECK_RESULT(readPrime(bytes, &item, type));
+            value->insert(Map::value_type(name, item));
         }
     }
     return 0;
 }
 
-int Decoder::readList(ByteArray& bytes, const TypeIter type, const EnumMap* enums, Vec* values) {
+int Decoder::readList(const ByteArray& bytes, Vec* values, const EnumMap* enums, const TypeIter type) {
     int len = bytes.rInt16();
     if(*type == "struct") {
         auto struc = _loader->getProtoByName(*(type+1));
         for(int i = 0; i < len; i++) {
             auto item = new Map();
-            CHECK_RESULT_FREE(readStruct(bytes, struc, item), item);
+            CHECK_RESULT_FREE(readStruct(bytes, item, struc), item);
             values->push_back(Value(item));
         }
     }
     else if(*type == "list") {
         for(int i = 0; i < len; i++) {
             auto item = new Vec();
-            CHECK_RESULT_FREE(readList(bytes, type+1, enums, item), item);
+            CHECK_RESULT_FREE(readList(bytes, item, enums, type+1), item);
             values->push_back(Value(item));
         }
     }
     else if(*type == "enum") {
         for(int i = 0; i < len; i++) {
             auto item = new string();
-            CHECK_RESULT_FREE(readEnum(bytes, enums, item), item);
+            CHECK_RESULT_FREE(readEnum(bytes, item, enums), item);
             values->push_back(Value(item));
         }
     }
     else {
         for(int i = 0; i < len; i++) {
             Value item;
-            CHECK_RESULT(readPrime(bytes, type, &item));
+            CHECK_RESULT(readPrime(bytes, &item, type));
             values->push_back(item);
         }
     }
     return 0;
 }
 
-int Decoder::readEnum(ByteArray& bytes, const EnumMap* enums, string* value) {
+int Decoder::readEnum(const ByteArray& bytes, string* value, const EnumMap* enums) {
     int value_int = static_cast<int>(bytes.rInt8());
     for(auto& e : *enums) {
         if(e.second == value_int) {
@@ -116,7 +116,7 @@ int Decoder::readEnum(ByteArray& bytes, const EnumMap* enums, string* value) {
     return -1;
 }
 
-int Decoder::readPrime(ByteArray& bytes, const TypeIter type, Value* value) {
+int Decoder::readPrime(const ByteArray& bytes, Value* value, const TypeIter type) {
     if(*type == "int") {
         value->set(static_cast<int>(bytes.rInt32()));
     }

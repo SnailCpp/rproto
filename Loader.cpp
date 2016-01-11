@@ -33,47 +33,49 @@ void Loader::loadAllProtos() {
     for(unsigned int i = 0; i < protos_conf.Size(); i++) {
         auto& item = protos_conf[i];
 
-        auto id = item["id"].GetUint();
-        auto name = item["name"].GetString();
+        int id = int(item["id"].GetUint());
+        auto name = new string(item["name"].GetString());
 
-        _name_to_id.insert(pair<string, int>(name, id));
+        _name_to_id.insert(pair<string, int>(*name, id));
 
         // read proto file
-        auto proto_data = fileToString(_path + name);
-
-        // parse json
-        rapidjson::Document doc;
-        doc.Parse<0>(proto_data.c_str());
-        if(doc.HasParseError()) {
-            printf("proto parse error: %d %s\n", id, name);
-        } else {
-            printf("load proto: %d %s\n", id, name);
-        }
-
-        // parse to Proto
-        Proto* proto = &_protos[id];
-        proto->setId(id);
-        proto->setName(name);
-        if(doc.HasMember("enum")) {
-            auto enums = new map<string, int>();
-            auto& jenum = doc["enum"];
-            for(auto it = jenum.MemberBegin(); it != jenum.MemberEnd(); it++) {
-                enums->insert(pair<string, int>(it->name.GetString(), it->value.GetInt()));
-            }
-            proto->setEnums(enums);
-        }
-        if(doc.HasMember("field")) {
-            auto fields = new vector<Field>();
-            auto& jfield = doc["field"];
-            for(unsigned int i = 0; i < jfield.Size(); i++) {
-                fields->push_back(Field(jfield[i].GetString()));
-            }
-            proto->setFields(fields);
-        }
+        auto proto_data = fileToString(_path + *name);
+        addProto(id, name, proto_data);
     }
 }
 
-Proto* Loader::getProtoByName(const std::string& name) {
+void Loader::addProto(int id, std::string* name, const std::string& content) {
+    rapidjson::Document doc;
+    doc.Parse<0>(content.c_str());
+    if(doc.HasParseError()) {
+        printf("proto parse error: %d %s\n", id, name->c_str());
+    } else {
+        printf("load proto: %d %s\n", id, name->c_str());
+    }
+
+    // parse to Proto
+    Proto* proto = &_protos[id];
+    proto->setId(id);
+    proto->setName(name);
+    if(doc.HasMember("enum")) {
+        auto enums = new map<string, int>();
+        auto& jenum = doc["enum"];
+        for(auto it = jenum.MemberBegin(); it != jenum.MemberEnd(); it++) {
+            enums->insert(pair<string, int>(it->name.GetString(), it->value.GetInt()));
+        }
+        proto->setEnums(enums);
+    }
+    if(doc.HasMember("field")) {
+        auto fields = new vector<Field>();
+        auto& jfield = doc["field"];
+        for(unsigned int i = 0; i < jfield.Size(); i++) {
+            fields->push_back(Field(jfield[i].GetString()));
+        }
+        proto->setFields(fields);
+    }
+}
+
+const Proto* Loader::getProtoByName(const std::string& name) {
     auto it = _name_to_id.find(name);
     if(it == _name_to_id.end()) {
         return nullptr;
@@ -81,7 +83,7 @@ Proto* Loader::getProtoByName(const std::string& name) {
     return getProtoById(it->second);
 }
 
-Proto* Loader::getProtoById(int id) {
+const Proto* Loader::getProtoById(int id) {
     if(id >= Proto_Index_Min && id <= Proto_Index_Max) {
         return &_protos[id];
     }

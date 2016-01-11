@@ -8,7 +8,7 @@
 
 namespace proto {
 
-typedef std::vector<std::string>::iterator TypeIter;
+typedef std::vector<std::string>::const_iterator TypeIter;
 
 class Field
 {
@@ -16,9 +16,9 @@ public:
     Field(const std::string& rawstr);
     ~Field();
 
-    const std::string& name();
-    const std::vector<std::string>& type();
-    const TypeIter typeIter();
+    const std::string& name() const;
+    const std::vector<std::string>& type() const;
+    TypeIter typeIter() const;
 
 private:
     std::string _name;
@@ -35,17 +35,17 @@ public:
 
     int id() const;
     const std::string& name() const;
-    EnumMap* enums() const;
-    std::vector<Field>* fields() const;
+    const EnumMap* enums() const;
+    const std::vector<Field>* fields() const;
 
     void setId(int id);
-    void setName(const std::string& name);
+    void setName(std::string* name);
     void setEnums(EnumMap* enums);
     void setFields(std::vector<Field>* fields);
 
 private:
     int _id;
-    std::string _name;
+    std::string* _name;
     EnumMap* _enums;
     std::vector<Field>* _fields;
 };

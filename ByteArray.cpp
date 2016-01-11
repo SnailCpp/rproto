@@ -69,13 +69,13 @@ void ByteArray::wBytes(const byte* bytes, size_t count) {
     _write_offset += count;
 }
 
-uint8_t ByteArray::rInt8() {
+uint8_t ByteArray::rInt8() const {
     auto buf = _buffer + _read_offset;
     _read_offset += 1;
     return buf[0];
 }
 
-uint16_t ByteArray::rInt16() {
+uint16_t ByteArray::rInt16() const {
     auto buf = _buffer + _read_offset;
     _read_offset += 2;
     if(_endian == ByteEndian::LITTLE) {
@@ -85,7 +85,7 @@ uint16_t ByteArray::rInt16() {
     }
 }
 
-uint32_t ByteArray::rInt32() {
+uint32_t ByteArray::rInt32() const {
     auto buf = _buffer + _read_offset;
     _read_offset += 4;
     if(_endian == ByteEndian::LITTLE) {
@@ -95,7 +95,7 @@ uint32_t ByteArray::rInt32() {
     }
 }
 
-std::string ByteArray::rString() {
+std::string ByteArray::rString() const {
     char* buf = (char*)(_buffer+_read_offset);
     int len = 0;
     while(buf[len] != '\0') {
@@ -143,7 +143,7 @@ void ByteArray::writeMv(size_t offset) {
     _write_offset += offset;
 }
 
-void ByteArray::readReset() {
+void ByteArray::readReset() const {
     _read_offset = 0;
 }
 

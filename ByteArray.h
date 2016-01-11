@@ -24,20 +24,20 @@ public:
     void wString(const std::string& data);
     void wBytes(const byte* bytes, size_t count);
 
-    uint8_t rInt8();
-    uint16_t rInt16();
-    uint32_t rInt32();
-    std::string rString();
+    uint8_t rInt8() const;
+    uint16_t rInt16() const;
+    uint32_t rInt32() const;
+    std::string rString() const;
 
-    size_t      size()   const;
-    const byte* first()  const;
-    ByteEndian  endian() const;
+    size_t size() const;
+    const byte* first() const;
+    ByteEndian endian() const;
 
     // unsafe
     void readMv(size_t offset);
     void writeMv(size_t offset);
 
-    void readReset();
+    void readReset() const;
     void writeReset();
 
     void clear();
@@ -46,7 +46,7 @@ public:
 private:
     ByteEndian _endian;
     byte* _buffer;
-    size_t _read_offset;
+    mutable size_t _read_offset;
     size_t _write_offset;
 };
 

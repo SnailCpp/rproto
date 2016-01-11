@@ -13,13 +13,13 @@ public:
     Encoder(Loader* loader);
     ~Encoder();
 
-    int encode(ByteArray& bytes, const std::string& name, Map& dict);
+    int encode(ByteArray* bytes, const std::string& name, const Map& dict);
 
 private:
-    int writeStruct(ByteArray& bytes, Proto* struc, Map& dict);
-    int writeList  (ByteArray& bytes, const TypeIter type,  const EnumMap* enums, Vec& values);
-    int writeEnum  (ByteArray& bytes, const EnumMap* enums, std::string& value);
-    int writePrime (ByteArray& bytes, const TypeIter type,  Value& value);
+    int writeStruct(ByteArray* bytes, const Map& value, const Proto* struc);
+    int writeList  (ByteArray* bytes, const Vec& values, const EnumMap* enums, const TypeIter type);
+    int writeEnum  (ByteArray* bytes, const std::string& value, const EnumMap* enums);
+    int writePrime (ByteArray* bytes, const Value& value,  const TypeIter type);
 
     Loader* _loader;
 };

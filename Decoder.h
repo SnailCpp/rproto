@@ -13,13 +13,13 @@ public:
     Decoder(Loader* loader);
     ~Decoder();
 
-    int decode(ByteArray& bytes, std::string& name, Map* dict);
+    int decode(const ByteArray& bytes, std::string& name, Map* dict);
 
 private:
-    int readStruct(ByteArray& bytes, Proto* struc, Map* dict);
-    int readList(ByteArray& bytes, const TypeIter type, const EnumMap* enums, Vec* values);
-    int readEnum(ByteArray& bytes, const EnumMap* enums, std::string* value);
-    int readPrime(ByteArray& bytes, const TypeIter type, Value* value);
+    int readStruct(const ByteArray& bytes, Map* value, const Proto* struc);
+    int readList  (const ByteArray& bytes, Vec* values, const EnumMap* enums, const TypeIter type);
+    int readEnum  (const ByteArray& bytes, std::string* value, const EnumMap* enums);
+    int readPrime (const ByteArray& bytes, Value* value, const TypeIter type);
 
     Loader* _loader;
 };

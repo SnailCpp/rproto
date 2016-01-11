@@ -20,18 +20,17 @@ Field::Field(const string& rawstr) {
 Field::~Field() {
 }
 
-const string& Field::name() {
+const string& Field::name() const {
     return _name;
 }
 
-const vector<string>& Field::type() {
+const vector<string>& Field::type() const {
     return _type;
 }
 
-const TypeIter Field::typeIter() {
-    return _type.begin();
+TypeIter Field::typeIter() const {
+    return TypeIter(_type.begin());
 }
-
 
 Proto::Proto()
 : _enums(nullptr)
@@ -55,14 +54,14 @@ int Proto::id() const {
 }
 
 const std::string& Proto::name() const {
-    return _name;
+    return *_name;
 }
 
-EnumMap* Proto::enums() const {
+const EnumMap* Proto::enums() const {
     return _enums;
 }
 
-std::vector<Field>* Proto::fields() const {
+const std::vector<Field>* Proto::fields() const {
     return _fields;
 }
 
@@ -70,7 +69,7 @@ void Proto::setId(int id) {
     _id = id;
 }
 
-void Proto::setName(const string& name) {
+void Proto::setName(string* name) {
     _name = name;
 }
 

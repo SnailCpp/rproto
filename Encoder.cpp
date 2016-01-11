@@ -17,27 +17,27 @@ Encoder::Encoder(Loader* loader) {
 Encoder::~Encoder() {
 }
 
-int Encoder::encode(ByteArray& bytes, const string& name, Map& dict) {
+int Encoder::encode(ByteArray* bytes, const string& name, const Map& dict) {
     auto proto = _loader->getProtoByName(name);
     if(proto == nullptr) {
         return -1;
     }
 
-    bytes.wInt16(proto->id()); // id
-    writeStruct(bytes, proto, dict); // proto
+    bytes->wInt16(proto->id()); // id
+    writeStruct(bytes, dict, proto); // proto
     return 0;
 }
 
-int Encoder::writeStruct(ByteArray& bytes, Proto* struc, Map& dict) {
+int Encoder::writeStruct(ByteArray* bytes, const Map& value, const Proto* struc) {
     if(struc == nullptr) {
         return -1;
     }
 
-    auto fields = struc->fields();
-    for(auto& field : *fields) {
+    auto& fields = *struc->fields();
+    for(auto& field : fields) {
         auto& name = field.name();
-        auto it = dict.find(name);
-        if(it == dict.end()) {
+        auto it = value.find(name);
+        if(it == value.end()) {
             return -1;
         }
 
@@ -46,51 +46,50 @@ int Encoder::writeStruct(ByteArray& bytes, Proto* struc, Map& dict) {
 
         if(*type == "struct") {
             auto sub_struc = _loader->getProtoByName(*(type+1));
-            CHECK_RESULT(writeStruct(bytes, sub_struc, value.getMap()));
+            CHECK_RESULT(writeStruct(bytes, value.getMap(), sub_struc));
         }
         else if(*type == "list") {
-            CHECK_RESULT(writeList(bytes, type+1, struc->enums(), value.getVec()));
+            CHECK_RESULT(writeList(bytes, value.getVec(), struc->enums(), type+1));
         }
         else if(*type == "enum") {
-            CHECK_RESULT(writeEnum(bytes, struc->enums(), value.getStr()));
+            CHECK_RESULT(writeEnum(bytes, value.getStr(), struc->enums()));
         }
         else {
-            CHECK_RESULT(writePrime(bytes, type, value));
+            CHECK_RESULT(writePrime(bytes, value, type));
         }
     }
     return 0;
 }
 
-int Encoder::writeList(ByteArray& bytes, const TypeIter type, const EnumMap* enums, Vec& values) {
+int Encoder::writeList(ByteArray* bytes, const Vec& values, const EnumMap* enums, const TypeIter type) {
     // array's length
-    bytes.wInt16(values.size());
-
+    bytes->wInt16(values.size());
     // array's items
     if(*type == "list") {
         for(auto& item : values) {
-            CHECK_RESULT(writeList(bytes, type+1, enums, item.getVec()));
+            CHECK_RESULT(writeList(bytes, item.getVec(), enums, type+1));
         }
     }
     else if(*type == "struct") {
         auto struc = _loader->getProtoByName(*(type+1));
         for(auto& item : values) {
-            CHECK_RESULT(writeStruct(bytes, struc, item.getMap()));
+            CHECK_RESULT(writeStruct(bytes, item.getMap(), struc));
         }
     }
     else if(*type == "enum") {
         for(auto& item : values) {
-            CHECK_RESULT(writeEnum(bytes, enums, item.getStr()));
+            CHECK_RESULT(writeEnum(bytes, item.getStr(), enums));
         }
     }
     else {
         for(auto& item : values) {
-            CHECK_RESULT(writePrime(bytes, type, item));
+            CHECK_RESULT(writePrime(bytes, item, type));
         }
     }
     return 0;
 }
 
-int Encoder::writeEnum(ByteArray& bytes, const EnumMap* enums, string& value) {
+int Encoder::writeEnum(ByteArray* bytes, const string& value, const EnumMap* enums) {
     if(enums == nullptr) {
         return -1;
     }
@@ -99,16 +98,16 @@ int Encoder::writeEnum(ByteArray& bytes, const EnumMap* enums, string& value) {
     if(it == enums->end()) {
         return -1;
     }
-    bytes.wInt8(static_cast<uint8_t>(it->second));
+    bytes->wInt8(static_cast<uint8_t>(it->second));
     return 0;
 }
 
-int Encoder::writePrime(ByteArray& bytes, const TypeIter type, Value& value) {
+int Encoder::writePrime(ByteArray* bytes, const Value& value, const TypeIter type) {
     if(*type == "int") {
-        bytes.wInt32(value.getInt());
+        bytes->wInt32(value.getInt());
     }
     else if(*type == "string") {
-        bytes.wString(value.getStr());
+        bytes->wString(value.getStr());
     }
     else {
         printf("unknown type: %s\n", type->c_str());

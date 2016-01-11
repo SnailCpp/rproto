@@ -34,9 +34,9 @@ public:
     Value(const Value& v);
 
 //    Value& operator= (int v);
-//    Value& operator= (const Value& other);
-//    Value& operator= (const Value& other);
-//    Value& operator= (const Value& other);
+//    Value& operator= (const Value& v);
+//    Value& operator= (const Value& v);
+//    Value& operator= (const Value& v);
     Value& operator= (const Value& other);
 
     void set(int v);
@@ -45,10 +45,16 @@ public:
     void set(Map* v);
     void set(const Value& v);
 
-    int getInt();
+    int getInt() const;
+
     Str& getStr();
+    const Str& getStr() const;
+
     Vec& getVec();
+    const Vec& getVec() const;
+
     Map& getMap();
+    const Map& getMap() const;
 
 private:
     void clear();

@@ -74,7 +74,7 @@ void Value::set(const Value& v) {
     _type = v._type;
 }
 
-int Value::getInt() {
+int Value::getInt() const {
     assert(_type == Type::TInt);
     return _data._int;
 }
@@ -84,12 +84,27 @@ Str& Value::getStr() {
     return *(_data._str);
 }
 
+const Str& Value::getStr() const {
+    assert(_type == Type::TStr);
+    return *(_data._str);
+}
+
 Vec& Value::getVec() {
     assert(_type == Type::TVec);
     return *(_data._vec);
 }
 
+const Vec& Value::getVec() const {
+    assert(_type == Type::TVec);
+    return *(_data._vec);
+}
+
 Map& Value::getMap() {
+    assert(_type == Type::TMap);
+    return *(_data._map);
+}
+
+const Map& Value::getMap() const {
     assert(_type == Type::TMap);
     return *(_data._map);
 }
