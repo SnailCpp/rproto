@@ -33,6 +33,8 @@ public:
     Value(Map* v);
     Value(const Value& v);
 
+    Type getType();
+
 //    Value& operator= (int v);
 //    Value& operator= (const Value& v);
 //    Value& operator= (const Value& v);

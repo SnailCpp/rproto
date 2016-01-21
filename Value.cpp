@@ -18,6 +18,10 @@ Value::Value(Vec* v) : Value() { set(v); }
 Value::Value(Map* v) : Value() { set(v); }
 Value::Value(const Value& v) : Value() { set(v); }
 
+Type Value::getType() {
+    return _type;
+}
+
 Value& Value::operator= (const Value& other) {
     set(other);
     return *this;
