@@ -227,9 +227,8 @@ extern "C"
         return 1;
     }
 
-    static int ltest(lua_State* L) {
+    static int lprint_bytes(lua_State* L) {
         proto::ByteArray* bytes = *(proto::ByteArray**)lua_touserdata(L, 1);
-
         for(size_t i = 0; i < bytes->size(); i++) {
             printf("%d ", *(bytes->first()+i));
         }
@@ -245,7 +244,7 @@ extern "C"
             {"newLoader",    lnewLoader},
             {"newEncoder",   lnewEncoder},
             {"newDecoder",   lnewDecoder},
-            {"test",         ltest},
+            {"printBytes",   lprint_bytes},
             {NULL,           NULL}
         };
 
