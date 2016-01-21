@@ -23,4 +23,34 @@
 - 字段使用字符串，后置类型，空格隔开，空格必须1个，另外json不允许写注释。我提供了ProtoMin工具用来格式化代码和去掉注释
 - 目前提供的类型有struct，list，enum，int，string。int是32位无符号，string以'\0'表示结束，扩展基本类型非常容易，但是目测这些类型足够了
 
+## lua调用类似这样：
+	local rproto = require "rproto"
+
+	local loader = rproto.newLoader()
+	loader:setup("/home/red/Documents/lua_test/proto");
+
+	-- encode
+	local encoder = rproto.newEncoder(loader)
+	local bytes = rproto.newByteArray()
+	encoder:encode(bytes, "Proto_Test", {
+		id = 123,
+		name = "Red",
+		gender = "Boy",
+		test_v = {
+			{100, 101},
+			{200, 201, 202}
+		}
+	})
+
+	-- decode
+	local decoder = rproto.newDecoder(loader)
+	local dd = decoder:decode(bytes, "Proto_Test")
+	print(dd.id, dd.name, dd.gender)
+	for k,v in ipairs(dd.test_v) do
+		for k1, v1 in ipairs(v) do
+			print(v1)
+		end
+	end
+
+
 *目前只是alpha版，使用起来可能不够方便，只供学习研究使用，一定不要用于生产环境！*
