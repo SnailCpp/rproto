@@ -21,7 +21,7 @@
 
 - 目前是使用json格式描述协议，在Loader中解析后会释放json。如果不想使用json，可以很容易的修改Loader的代码，替换为自己的格式
 - 字段使用字符串，后置类型，空格隔开，空格必须1个，另外json不允许写注释。我提供了ProtoMin工具用来格式化代码和去掉注释
-- 目前提供的类型有struct，list，enum，int，string。int是32位无符号，string以'\0'表示结束，扩展基本类型非常容易，但是目测这些类型足够了
+- 目前提供的类型有struct，list，enum，int，int32, int16, int8, string。int无符号，string以'\0'表示结束，扩展基本类型非常容易，但是目测这些类型足够了
 
 ## lua调用类似这样：
 	local rproto = require "rproto"

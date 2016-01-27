@@ -117,8 +117,14 @@ int Decoder::readEnum(const ByteArray& bytes, string* value, const EnumMap* enum
 }
 
 int Decoder::readPrime(const ByteArray& bytes, Value* value, const TypeIter type) {
-    if(*type == "int") {
+    if(*type == "int" || *type == "int32") {
         value->set(static_cast<int>(bytes.rInt32()));
+    }
+    else if(*type == "int16") {
+        value->set(static_cast<int>(bytes.rInt16()));
+    }
+    else if(*type == "int8") {
+        value->set(static_cast<int>(bytes.rInt8()));
     }
     else if(*type == "string") {
         auto str = new string(bytes.rString());

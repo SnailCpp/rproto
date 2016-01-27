@@ -103,8 +103,14 @@ int Encoder::writeEnum(ByteArray* bytes, const string& value, const EnumMap* enu
 }
 
 int Encoder::writePrime(ByteArray* bytes, const Value& value, const TypeIter type) {
-    if(*type == "int") {
+    if(*type == "int" || *type == "int32") {
         bytes->wInt32(value.getInt());
+    }
+    else if(*type == "int16") {
+        bytes->wInt16(value.getInt());
+    }
+    else if(*type == "int8") {
+        bytes->wInt8(value.getInt());
     }
     else if(*type == "string") {
         bytes->wString(value.getStr());
