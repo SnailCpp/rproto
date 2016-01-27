@@ -142,7 +142,6 @@ extern "C"
     }
 
     static int ldelByteArray(lua_State* L) {
-        printf(".......... del ByteArray\n");
         proto::ByteArray** p = (proto::ByteArray**)lua_touserdata(L, 1);
         delete *p;
         *p = nullptr;
@@ -158,7 +157,6 @@ extern "C"
     }
 
     static int ldelLoader(lua_State* L) {
-        printf(".......... del loader\n");
         proto::Loader** p = (proto::Loader**)lua_touserdata(L, 1);
         delete *p;
         *p = nullptr;
@@ -175,7 +173,6 @@ extern "C"
     }
 
     static int ldelEncoder(lua_State* L) {
-        printf(".......... del encoder\n");
         proto::Encoder** p = (proto::Encoder**)lua_touserdata(L, 1);
         delete *p;
         *p = nullptr;
@@ -192,7 +189,6 @@ extern "C"
     }
 
     static int ldelDecoder(lua_State* L) {
-        printf(".......... del decoder\n");
         proto::Decoder** p = (proto::Decoder**)lua_touserdata(L, 1);
         delete *p;
         *p = nullptr;

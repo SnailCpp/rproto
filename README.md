@@ -4,12 +4,12 @@
 
 ## 描述一个协议类似这样：
 	{
-		name: "Student",
-		enum: {
-			Boy: 1
-			Girl: 2
+		"name": "Student",
+		"enum": {
+			"Boy": 1
+			"Girl": 2
 		},
-		field: [
+		"field": [
 			"num int",
 			"name string",
 			"gender enum",
