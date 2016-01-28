@@ -44,8 +44,8 @@
 
 	-- decode
 	local decoder = rproto.newDecoder(loader)
-	local dd = decoder:decode(bytes, "Proto_Test")
-	print(dd.id, dd.name, dd.gender)
+	local proto_name, dd = decoder:decode(bytes)
+	print(proto_name, dd.id, dd.name, dd.gender)
 	for k,v in ipairs(dd.test_v) do
 		for k1, v1 in ipairs(v) do
 			print(v1)

@@ -195,6 +195,14 @@ extern "C"
         return 0;
     }
 
+    static int lByteArray_wPack(lua_State* L) {
+        proto::ByteArray* bytes = *(proto::ByteArray**)lua_touserdata(L, 1);
+        size_t sz;
+        auto ppack = luaL_checklstring(L, 2, &sz);
+        bytes->wBytes((proto::byte*)ppack, sz);
+        return 0;
+    }
+
     static int lLoader_setup(lua_State* L) {
         proto::Loader* loader = *(proto::Loader**)lua_touserdata(L, 1);
         auto path = lua_tostring(L, 2);
@@ -216,11 +224,12 @@ extern "C"
     static int lDecoder_decode(lua_State* L) {
         proto::Decoder* decoder = *(proto::Decoder**)lua_touserdata(L, 1);
         proto::ByteArray* bytes = *(proto::ByteArray**)lua_touserdata(L, 2);
-        std::string name(lua_tostring(L, 3));
+        std::string name;
         proto::Map dict;
         decoder->decode(*bytes, name, &dict);
+        lua_pushstring(L, name.c_str());
         mapToTable(L, dict);
-        return 1;
+        return 2;
     }
 
     static int lprint_bytes(lua_State* L) {
@@ -244,14 +253,19 @@ extern "C"
             {NULL,           NULL}
         };
 
+        struct luaL_Reg f_ByteArray[] = {
+            {"wPack", lByteArray_wPack},
+            {NULL, NULL}
+        };
+
         struct luaL_Reg f_Loader[] = {
             {"setup", lLoader_setup},
-            {NULL,  NULL}
+            {NULL, NULL}
         };
 
         struct luaL_Reg f_Encoder[] = {
             {"encode", lEncoder_encode},
-            {NULL,  NULL}
+            {NULL, NULL}
         };
 
         struct luaL_Reg f_Decoder[] = {
@@ -267,6 +281,7 @@ extern "C"
         lua_pushstring(L, "__index");
         lua_pushvalue(L, -2);
         lua_settable(L, -3);
+        luaL_setfuncs(L, f_ByteArray, 0);
 
         luaL_newmetatable(L, "red.rproto.Loader");
         lua_pushstring(L, "__gc");
