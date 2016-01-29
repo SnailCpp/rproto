@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <string>
 
-namespace proto {
+namespace rproto {
 
 enum class Type {
     TNull,

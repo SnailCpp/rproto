@@ -6,7 +6,7 @@
 #include "ByteArray.h"
 #include "Loader.h"
 
-namespace proto {
+namespace rproto {
 
 class Encoder {
 public:

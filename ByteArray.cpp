@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <assert.h>
 
-using namespace proto;
+using namespace rproto;
 
 // big 64k
 ByteArray::ByteArray()

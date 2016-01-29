@@ -3,7 +3,7 @@
 
 #include <string>
 
-namespace proto {
+namespace rproto {
 
 typedef uint8_t byte;
 

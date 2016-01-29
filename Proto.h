@@ -6,7 +6,7 @@
 #include <map>
 #include "ByteArray.h"
 
-namespace proto {
+namespace rproto {
 
 typedef std::vector<std::string>::const_iterator TypeIter;
 

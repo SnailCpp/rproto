@@ -2,7 +2,7 @@
 #include "Value.h"
 
 using namespace std;
-using namespace proto;
+using namespace rproto;
 
 Value::Value()
 : _type(Type::TNull) {

@@ -9,11 +9,11 @@
 #include "Decoder.h"
 
 bool isMap(lua_State* L);
-void tableToMap(lua_State* L, int index, proto::Map* map);
-void tableToVec(lua_State* L, int index, proto::Vec* vec);
-void pushValue(lua_State* L, proto::Value& val);
-void mapToTable(lua_State* L, proto::Map& map);
-void vecToTable(lua_State* L, proto::Vec& vec);
+void tableToMap(lua_State* L, int index, rproto::Map* map);
+void tableToVec(lua_State* L, int index, rproto::Vec* vec);
+void pushValue(lua_State* L, rproto::Value& val);
+void mapToTable(lua_State* L, rproto::Map& map);
+void vecToTable(lua_State* L, rproto::Vec& vec);
 
 bool isMap(lua_State* L) {
     if(!lua_istable(L, -1)) {
@@ -32,29 +32,29 @@ bool isMap(lua_State* L) {
     return ret;
 }
 
-void tableToMap(lua_State* L, int index, proto::Map* map) {
+void tableToMap(lua_State* L, int index, rproto::Map* map) {
     lua_pushnil(L);
     while(lua_next(L, index) != 0) {
         auto key = lua_tostring(L, -2);
         if(lua_istable(L, -1)) {
             if(isMap(L)) {
-                auto val = new proto::Map();
+                auto val = new rproto::Map();
                 tableToMap(L, lua_gettop(L), val);
-                map->insert(proto::Map::value_type(key, proto::Value(val)));
+                map->insert(rproto::Map::value_type(key, rproto::Value(val)));
             }
             else {
-                auto val = new proto::Vec();
+                auto val = new rproto::Vec();
                 tableToVec(L, lua_gettop(L), val);
-                map->insert(proto::Map::value_type(key, proto::Value(val)));
+                map->insert(rproto::Map::value_type(key, rproto::Value(val)));
             }
         }
         else if(lua_type(L, -1) == LUA_TSTRING) {
             auto val = new std::string(lua_tostring(L, -1));
-            map->insert(proto::Map::value_type(key, proto::Value(val)));
+            map->insert(rproto::Map::value_type(key, rproto::Value(val)));
         }
         else if(lua_type(L, -1) == LUA_TNUMBER) {
             auto val = lua_tointeger(L, -1);
-            map->insert(proto::Map::value_type(key, proto::Value(val)));
+            map->insert(rproto::Map::value_type(key, rproto::Value(val)));
         }
         else {
             assert("type error!");
@@ -63,28 +63,28 @@ void tableToMap(lua_State* L, int index, proto::Map* map) {
     }
 }
 
-void tableToVec(lua_State* L, int index, proto::Vec* vec) {
+void tableToVec(lua_State* L, int index, rproto::Vec* vec) {
     size_t len = lua_rawlen(L, index);
     for(size_t i = 1; i <= len; i++) {
         lua_pushnumber(L, i);
         lua_gettable(L, index);
         if(lua_istable(L, -1)) {
             if(isMap(L)) {
-                auto val = new proto::Map();
+                auto val = new rproto::Map();
                 tableToMap(L, lua_gettop(L), val);
-                vec->push_back(proto::Value(val));
+                vec->push_back(rproto::Value(val));
             }
             else {
-                auto val = new proto::Vec();
+                auto val = new rproto::Vec();
                 tableToVec(L, lua_gettop(L), val);
-                vec->push_back(proto::Value(val));
+                vec->push_back(rproto::Value(val));
             }
         }
         else if(lua_type(L, -1) == LUA_TSTRING) {
-            vec->push_back(proto::Value(new std::string(lua_tostring(L, -1))));
+            vec->push_back(rproto::Value(new std::string(lua_tostring(L, -1))));
         }
         else if(lua_type(L, -1) == LUA_TNUMBER) {
-            vec->push_back(proto::Value(lua_tointeger(L, -1)));
+            vec->push_back(rproto::Value(lua_tointeger(L, -1)));
         }
         else {
             assert("type error!");
@@ -93,18 +93,18 @@ void tableToVec(lua_State* L, int index, proto::Vec* vec) {
     }
 }
 
-void pushValue(lua_State* L, proto::Value& val) {
+void pushValue(lua_State* L, rproto::Value& val) {
     switch(val.getType()) {
-        case proto::Type::TMap:
+        case rproto::Type::TMap:
             mapToTable(L, val.getMap());
             break;
-        case proto::Type::TVec:
+        case rproto::Type::TVec:
             vecToTable(L, val.getVec());
             break;
-        case proto::Type::TInt:
+        case rproto::Type::TInt:
             lua_pushinteger(L, val.getInt());
             break;
-        case proto::Type::TStr:
+        case rproto::Type::TStr:
             lua_pushstring(L, val.getStr().c_str());
             break;
         default:
@@ -113,7 +113,7 @@ void pushValue(lua_State* L, proto::Value& val) {
     }
 }
 
-void mapToTable(lua_State* L, proto::Map& map) {
+void mapToTable(lua_State* L, rproto::Map& map) {
     lua_newtable(L);
     for(auto& it : map) {
         lua_pushstring(L, it.first.c_str());
@@ -122,7 +122,7 @@ void mapToTable(lua_State* L, proto::Map& map) {
     }
 }
 
-void vecToTable(lua_State* L, proto::Vec& vec) {
+void vecToTable(lua_State* L, rproto::Vec& vec) {
     lua_newtable(L);
     for(int i = 0; i < vec.size(); i++) {
         lua_pushnumber(L, i+1);
@@ -134,77 +134,77 @@ void vecToTable(lua_State* L, proto::Vec& vec) {
 extern "C"
 {
     static int lnewByteArray(lua_State* L) {
-        proto::ByteArray** p = (proto::ByteArray**)lua_newuserdata(L, sizeof(proto::ByteArray*));
-        *p = new proto::ByteArray();
+        rproto::ByteArray** p = (rproto::ByteArray**)lua_newuserdata(L, sizeof(rproto::ByteArray*));
+        *p = new rproto::ByteArray();
         luaL_getmetatable(L, "red.rproto.ByteArray");
         lua_setmetatable(L, -2);
         return 1;
     }
 
     static int ldelByteArray(lua_State* L) {
-        proto::ByteArray** p = (proto::ByteArray**)lua_touserdata(L, 1);
+        rproto::ByteArray** p = (rproto::ByteArray**)lua_touserdata(L, 1);
         delete *p;
         *p = nullptr;
         return 0;
     }
 
     static int lnewLoader(lua_State* L) {
-        proto::Loader** p = (proto::Loader**)lua_newuserdata(L, sizeof(proto::Loader*));
-        *p = new proto::Loader();
+        rproto::Loader** p = (rproto::Loader**)lua_newuserdata(L, sizeof(rproto::Loader*));
+        *p = new rproto::Loader();
         luaL_getmetatable(L, "red.rproto.Loader");
         lua_setmetatable(L, -2);
         return 1;
     }
 
     static int ldelLoader(lua_State* L) {
-        proto::Loader** p = (proto::Loader**)lua_touserdata(L, 1);
+        rproto::Loader** p = (rproto::Loader**)lua_touserdata(L, 1);
         delete *p;
         *p = nullptr;
         return 0;
     }
 
     static int lnewEncoder(lua_State* L) {
-        proto::Loader* loader = *(proto::Loader**)lua_touserdata(L, 1);
-        proto::Encoder** p = (proto::Encoder**)lua_newuserdata(L, sizeof(proto::Encoder*));
-        *p = new proto::Encoder(loader);
+        rproto::Loader* loader = *(rproto::Loader**)lua_touserdata(L, 1);
+        rproto::Encoder** p = (rproto::Encoder**)lua_newuserdata(L, sizeof(rproto::Encoder*));
+        *p = new rproto::Encoder(loader);
         luaL_getmetatable(L, "red.rproto.Encoder");
         lua_setmetatable(L, -2);
         return 1;
     }
 
     static int ldelEncoder(lua_State* L) {
-        proto::Encoder** p = (proto::Encoder**)lua_touserdata(L, 1);
+        rproto::Encoder** p = (rproto::Encoder**)lua_touserdata(L, 1);
         delete *p;
         *p = nullptr;
         return 0;
     }
 
     static int lnewDecoder(lua_State* L) {
-        proto::Loader* loader = *(proto::Loader**)lua_touserdata(L, 1);
-        proto::Decoder** p = (proto::Decoder**)lua_newuserdata(L, sizeof(proto::Decoder*));
-        *p = new proto::Decoder(loader);
+        rproto::Loader* loader = *(rproto::Loader**)lua_touserdata(L, 1);
+        rproto::Decoder** p = (rproto::Decoder**)lua_newuserdata(L, sizeof(rproto::Decoder*));
+        *p = new rproto::Decoder(loader);
         luaL_getmetatable(L, "red.rproto.Decoder");
         lua_setmetatable(L, -2);
         return 1;
     }
 
     static int ldelDecoder(lua_State* L) {
-        proto::Decoder** p = (proto::Decoder**)lua_touserdata(L, 1);
+        rproto::Decoder** p = (rproto::Decoder**)lua_touserdata(L, 1);
         delete *p;
         *p = nullptr;
         return 0;
     }
 
     static int lByteArray_wPack(lua_State* L) {
-        proto::ByteArray* bytes = *(proto::ByteArray**)lua_touserdata(L, 1);
+        rproto::ByteArray* bytes = *(rproto::ByteArray**)lua_touserdata(L, 1);
         size_t sz;
         auto ppack = luaL_checklstring(L, 2, &sz);
-        bytes->wBytes((proto::byte*)ppack, sz);
+        bytes->wBytes((rproto::byte*)ppack, sz);
         return 0;
     }
 
     static int lLoader_setup(lua_State* L) {
-        proto::Loader* loader = *(proto::Loader**)lua_touserdata(L, 1);
+        rproto::Loader* loader = *(rproto::Loader**)lua_touserdata(L, 1);
         auto path = lua_tostring(L, 2);
         loader->setProtoPath(path);
         loader->loadAllProtos();
@@ -212,20 +212,20 @@ extern "C"
     }
 
     static int lEncoder_encode(lua_State* L) {
-        proto::Encoder* encoder = *(proto::Encoder**)lua_touserdata(L, 1);
-        proto::ByteArray* bytes = *(proto::ByteArray**)lua_touserdata(L, 2);
+        rproto::Encoder* encoder = *(rproto::Encoder**)lua_touserdata(L, 1);
+        rproto::ByteArray* bytes = *(rproto::ByteArray**)lua_touserdata(L, 2);
         std::string name(lua_tostring(L, 3));
-        proto::Map dict;
+        rproto::Map dict;
         tableToMap(L, 4, &dict);
         encoder->encode(bytes, name, dict);
         return 0;
     }
 
     static int lDecoder_decode(lua_State* L) {
-        proto::Decoder* decoder = *(proto::Decoder**)lua_touserdata(L, 1);
-        proto::ByteArray* bytes = *(proto::ByteArray**)lua_touserdata(L, 2);
+        rproto::Decoder* decoder = *(rproto::Decoder**)lua_touserdata(L, 1);
+        rproto::ByteArray* bytes = *(rproto::ByteArray**)lua_touserdata(L, 2);
         std::string name;
-        proto::Map dict;
+        rproto::Map dict;
         decoder->decode(*bytes, name, &dict);
         lua_pushstring(L, name.c_str());
         mapToTable(L, dict);
@@ -233,7 +233,7 @@ extern "C"
     }
 
     static int lprint_bytes(lua_State* L) {
-        proto::ByteArray* bytes = *(proto::ByteArray**)lua_touserdata(L, 1);
+        rproto::ByteArray* bytes = *(rproto::ByteArray**)lua_touserdata(L, 1);
         for(size_t i = 0; i < bytes->size(); i++) {
             printf("%d ", *(bytes->first()+i));
         }

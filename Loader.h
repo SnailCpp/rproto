@@ -6,7 +6,7 @@
 #include <vector>
 #include "Proto.h"
 
-namespace proto {
+namespace rproto {
 
 const int Proto_Index_Min = 100;
 const int Proto_Index_Max = 65499;

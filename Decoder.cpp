@@ -1,7 +1,7 @@
 #include "Decoder.h"
 
 using namespace std;
-using namespace proto;
+using namespace rproto;
 
 #define CHECK_RESULT(res) do {\
     int r = res;\

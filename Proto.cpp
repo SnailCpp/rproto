@@ -1,7 +1,7 @@
 #include "Proto.h"
 
 using namespace std;
-using namespace proto;
+using namespace rproto;
 
 Field::Field(const string& rawstr) {
     int start = 0;

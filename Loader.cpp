@@ -6,7 +6,7 @@
 #include "rapidjson/stringbuffer.h"
 
 using namespace std;
-using namespace proto;
+using namespace rproto;
 
 Loader::Loader() {
 }
