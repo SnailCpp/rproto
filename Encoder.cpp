@@ -24,8 +24,8 @@ int Encoder::encode(ByteArray* bytes, const string& name, const Map& dict) {
     }
 
     bytes->wInt16(proto->id()); // id
-    writeStruct(bytes, dict, proto); // proto
-    return 0;
+    int result = writeStruct(bytes, dict, proto); // proto
+    return result;
 }
 
 int Encoder::writeStruct(ByteArray* bytes, const Map& value, const Proto* struc) {

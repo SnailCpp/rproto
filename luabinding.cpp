@@ -217,8 +217,9 @@ extern "C"
         std::string name(lua_tostring(L, 3));
         rproto::Map dict;
         tableToMap(L, 4, &dict);
-        encoder->encode(bytes, name, dict);
-        return 0;
+        int result = encoder->encode(bytes, name, dict);
+        lua_pushinteger(L, result);
+        return 1;
     }
 
     static int lDecoder_decode(lua_State* L) {
@@ -226,10 +227,11 @@ extern "C"
         rproto::ByteArray* bytes = *(rproto::ByteArray**)lua_touserdata(L, 2);
         std::string name;
         rproto::Map dict;
-        decoder->decode(*bytes, name, &dict);
+        int result = decoder->decode(*bytes, name, &dict);
+        lua_pushinteger(L, result);
         lua_pushstring(L, name.c_str());
         mapToTable(L, dict);
-        return 2;
+        return 3;
     }
 
     static int lprint_bytes(lua_State* L) {

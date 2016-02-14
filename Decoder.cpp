@@ -33,8 +33,8 @@ int Decoder::decode(const ByteArray& bytes, string& name, Map* dict) {
     }
 
     name = proto->name();
-    readStruct(bytes, dict, proto);
-    return 0;
+    int result = readStruct(bytes, dict, proto);
+    return result;
 }
 
 int Decoder::readStruct(const ByteArray& bytes, Map* value, const Proto* struc) {
