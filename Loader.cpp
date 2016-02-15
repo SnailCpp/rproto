@@ -1,5 +1,7 @@
 #include "Loader.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
@@ -20,58 +22,64 @@ void Loader::setProtoPath(const string& path) {
 }
 
 void Loader::loadAllProtos() {
-    auto data = fileToString(_path + "ALL");
+    string path_ALL(_path + "_ALL");
 
-    rapidjson::Document all;
-    all.Parse<0>(data.c_str());
-    if(all.HasParseError()) {
-        printf("ALL parse error!\n");
+    // only for unix
+    string cmd("ls " + _path + " -1 > " + path_ALL);
+    system(cmd.c_str());
+
+    FILE *fp = fopen(path_ALL.c_str(), "r");
+    if(!fp) {
+        printf("Error Read _ALL");
         return;
     }
-
-    auto& protos_conf = all["protos"];
-    for(unsigned int i = 0; i < protos_conf.Size(); i++) {
-        auto& item = protos_conf[i];
-
-        int id = int(item["id"].GetUint());
-        auto name = new string(item["name"].GetString());
-
-        _name_to_id.insert(pair<string, int>(*name, id));
-
-        // read proto file
-        auto proto_data = fileToString(_path + *name);
-        addProto(id, name, proto_data);
+    char buffer[1024];
+    while(fgets(buffer, 1024, fp) != NULL) {
+        int len = strlen(buffer);
+        if(buffer[len-1] == '\n') {
+            buffer[len-1] = 0;
+        }
+        if(buffer[0] != '_') {
+            addProtos(fileToString(_path + string(buffer)));
+        }
     }
+    fclose(fp);
 }
 
-void Loader::addProto(int id, std::string* name, const std::string& content) {
+void Loader::addProtos(const string& content) {
     rapidjson::Document doc;
     doc.Parse<0>(content.c_str());
     if(doc.HasParseError()) {
-        printf("proto parse error: %d %s\n", id, name->c_str());
-    } else {
-        printf("load proto: %d %s\n", id, name->c_str());
+        printf("proto parse error: %s\n", content.c_str());
+        return;
     }
-
-    // parse to Proto
-    Proto* proto = &_protos[id];
-    proto->setId(id);
-    proto->setName(name);
-    if(doc.HasMember("enum")) {
-        auto enums = new map<string, int>();
-        auto& jenum = doc["enum"];
-        for(auto it = jenum.MemberBegin(); it != jenum.MemberEnd(); it++) {
-            enums->insert(pair<string, int>(it->name.GetString(), it->value.GetInt()));
+    auto& protos = doc["protos"];
+    for(unsigned int i = 0; i < protos.Size(); i++) {
+        auto& item = protos[i];
+        int id = item["id"].GetInt();
+        string name(item["name"].GetString());
+        // parse to Proto
+        Proto* proto = &_protos[id];
+        proto->setId(id);
+        proto->setName(&name);
+        if(item.HasMember("enum")) {
+            auto enums = new map<string, int>();
+            auto& jenum = item["enum"];
+            for(auto it = jenum.MemberBegin(); it != jenum.MemberEnd(); it++) {
+                enums->insert(pair<string, int>(it->name.GetString(), it->value.GetInt()));
+            }
+            proto->setEnums(enums);
         }
-        proto->setEnums(enums);
-    }
-    if(doc.HasMember("field")) {
-        auto fields = new vector<Field>();
-        auto& jfield = doc["field"];
-        for(unsigned int i = 0; i < jfield.Size(); i++) {
-            fields->push_back(Field(jfield[i].GetString()));
+        if(item.HasMember("field")) {
+            auto fields = new vector<Field>();
+            auto& jfield = item["field"];
+            for(unsigned int i = 0; i < jfield.Size(); i++) {
+                fields->push_back(Field(jfield[i].GetString()));
+            }
+            proto->setFields(fields);
         }
-        proto->setFields(fields);
+        _name_to_id.insert(pair<string, int>(name, id));
+        printf("load proto: %d %s\n", id, name.c_str());
     }
 }
 

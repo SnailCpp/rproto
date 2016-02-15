@@ -19,7 +19,7 @@ public:
     void setProtoPath(const std::string& path);
     void loadAllProtos();
 
-    void addProto(int id, std::string* name, const std::string& content);
+    void addProtos(const std::string& content);
 
     const Proto* getProtoByName(const std::string& name);
     const Proto* getProtoById(int id);
