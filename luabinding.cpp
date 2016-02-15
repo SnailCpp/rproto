@@ -195,12 +195,18 @@ extern "C"
         return 0;
     }
 
-    static int lByteArray_wPack(lua_State* L) {
+    static int lByteArray_wLStr(lua_State* L) {
         rproto::ByteArray* bytes = *(rproto::ByteArray**)lua_touserdata(L, 1);
         size_t sz;
         auto ppack = luaL_checklstring(L, 2, &sz);
         bytes->wBytes((rproto::byte*)ppack, sz);
         return 0;
+    }
+
+    static int lByteArray_toLStr(lua_State* L) {
+        rproto::ByteArray* bytes = *(rproto::ByteArray**)lua_touserdata(L, 1);
+        lua_pushlstring(L, (char*)(bytes->first()), bytes->size());
+        return 1;
     }
 
     static int lLoader_setup(lua_State* L) {
@@ -256,7 +262,8 @@ extern "C"
         };
 
         struct luaL_Reg f_ByteArray[] = {
-            {"wPack", lByteArray_wPack},
+            {"wLStr", lByteArray_wLStr},
+            {"toLStr", lByteArray_toLStr},
             {NULL, NULL}
         };
 
