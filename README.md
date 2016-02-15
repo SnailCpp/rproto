@@ -4,18 +4,25 @@
 
 ## 描述一个协议类似这样：
 	{
-		"name": "Student",
-		"enum": {
-			"Boy": 1
-			"Girl": 2
-		},
-		"field": [
-			"num int",
-			"name string",
-			"gender enum",
-			"hobby list string",
-			"score list list int",
-			"parent struct Person"
+		"protos": [
+			{
+				"name": "Student",
+				"enum": {
+					"Boy": 1
+					"Girl": 2
+				},
+				"field": [
+					"num int",
+					"name string",
+					"gender enum",
+					"hobby list string",
+					"score list list int",
+					"parent struct Person"
+				]
+			},
+			{
+				(可描述多个协议)......
+			}
 		]
 	}
 
