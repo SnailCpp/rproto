@@ -42,6 +42,9 @@ int Decoder::readStruct(const ByteArray& bytes, Map* value, const Proto* struc) 
         return -1;
     }
     auto fields = struc->fields();
+    if(fields == nullptr) {
+        return 0;
+    }
     for(auto& field : *fields) {
         auto& name = field.name();
         auto type = field.typeIter();

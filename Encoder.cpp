@@ -33,8 +33,11 @@ int Encoder::writeStruct(ByteArray* bytes, const Map& value, const Proto* struc)
         return -1;
     }
 
-    auto& fields = *struc->fields();
-    for(auto& field : fields) {
+    auto fields = struc->fields();
+    if(fields == nullptr) {
+        return 0;
+    }
+    for(auto& field : *fields) {
         auto& name = field.name();
         auto it = value.find(name);
         if(it == value.end()) {

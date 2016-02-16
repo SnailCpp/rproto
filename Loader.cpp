@@ -54,14 +54,15 @@ void Loader::addProtos(const string& content) {
         return;
     }
     auto& protos = doc["protos"];
-    for(unsigned int i = 0; i < protos.Size(); i++) {
-        auto& item = protos[i];
+    for(unsigned int it_p = 0; it_p < protos.Size(); it_p++) {
+        auto& item = protos[it_p];
         int id = item["id"].GetInt();
-        string name(item["name"].GetString());
+        auto name = new string(item["name"].GetString());
+        _name_to_id.insert(pair<string, int>(*name, id));
         // parse to Proto
         Proto* proto = &_protos[id];
         proto->setId(id);
-        proto->setName(&name);
+        proto->setName(name);
         if(item.HasMember("enum")) {
             auto enums = new map<string, int>();
             auto& jenum = item["enum"];
@@ -78,8 +79,7 @@ void Loader::addProtos(const string& content) {
             }
             proto->setFields(fields);
         }
-        _name_to_id.insert(pair<string, int>(name, id));
-        printf("load proto: %d %s\n", id, name.c_str());
+        printf("load proto: %d %s\n", id, name->c_str());
     }
 }
 
