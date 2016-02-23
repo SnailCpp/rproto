@@ -25,7 +25,7 @@ void Loader::loadAllProtos() {
     string path_ALL(_path + "_ALL");
 
     // only for unix
-    string cmd("ls " + _path + " -1 > " + path_ALL);
+    string cmd("ls -1 " + _path + ">" + path_ALL);
     system(cmd.c_str());
 
     FILE *fp = fopen(path_ALL.c_str(), "r");
