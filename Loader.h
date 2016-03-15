@@ -35,14 +35,10 @@ private:
     std::string rename(const std::string& package,
                         const std::string& subname1,
                         const std::string& subname2 = "");
-    void addOneProto(const std::string& name, int id);
-
+    void addOneProto(const std::string& name, int id, bool isrpc);
 
     std::string _fileContent;
     size_t _offset;
-
-
-
 
     std::string _path;
     Proto _protos[Proto_Index_Max+1];

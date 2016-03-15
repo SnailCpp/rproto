@@ -68,13 +68,13 @@ void Loader::addProtos(const string& package) {
             while((subname=getWord()) != "}") {
                 auto name = rename(package, rpcname, subname);
                 auto id = strToInt(getWord());
-                addOneProto(name, id);
+                addOneProto(name, id, true);
             }
         }
         else {
             auto name = rename(package, getWord());
             auto id = strToInt(getWord());
-            addOneProto(name, id);
+            addOneProto(name, id, false);
         }
     }
 }
@@ -190,7 +190,7 @@ string Loader::rename(const string& package, const string& subname1, const strin
     }
 }
 
-void Loader::addOneProto(const string& name, int id) {
+void Loader::addOneProto(const string& name, int id, bool isrpc) {
     _name_to_id.insert(pair<string, int>(name, id));
     // parse to Proto
     Proto* proto = &_protos[id];
@@ -209,6 +209,9 @@ void Loader::addOneProto(const string& name, int id) {
     }
     // field
     auto fields = new vector<Field>();
+    if(isrpc) { // rpc has one more field,session
+        fields->push_back(Field("_session int"));
+    }
     string line;
     while((line=getLine()) != "}") {
         fields->push_back(Field(line));
