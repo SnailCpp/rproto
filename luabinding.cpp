@@ -124,7 +124,7 @@ void mapToTable(lua_State* L, rproto::Map& map) {
 
 void vecToTable(lua_State* L, rproto::Vec& vec) {
     lua_newtable(L);
-    for(int i = 0; i < vec.size(); i++) {
+    for(size_t i = 0; i < vec.size(); i++) {
         lua_pushnumber(L, i+1);
         pushValue(L, vec[i]);
         lua_rawset(L, -3);
@@ -246,6 +246,7 @@ extern "C"
             printf("%d ", *(bytes->first()+i));
         }
         printf("\n");
+        return 0;
     }
 
     int luaopen_rproto(lua_State* L) {

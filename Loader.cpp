@@ -3,10 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "rapidjson/document.h"
-#include "rapidjson/writer.h"
-#include "rapidjson/stringbuffer.h"
-
 using namespace std;
 using namespace rproto;
 
@@ -40,47 +36,12 @@ void Loader::loadAllProtos() {
             buffer[len-1] = 0;
         }
         if(buffer[0] != '_') {
-            addProtos(fileToString(_path + string(buffer)));
+            string package(buffer);
+            fileToContent(_path + package);
+            addProtos(package);
         }
     }
     fclose(fp);
-}
-
-void Loader::addProtos(const string& content) {
-    rapidjson::Document doc;
-    doc.Parse<0>(content.c_str());
-    if(doc.HasParseError()) {
-        printf("proto parse error: %s\n", content.c_str());
-        return;
-    }
-    auto& protos = doc["protos"];
-    for(unsigned int it_p = 0; it_p < protos.Size(); it_p++) {
-        auto& item = protos[it_p];
-        int id = item["id"].GetInt();
-        auto name = new string(item["name"].GetString());
-        _name_to_id.insert(pair<string, int>(*name, id));
-        // parse to Proto
-        Proto* proto = &_protos[id];
-        proto->setId(id);
-        proto->setName(name);
-        if(item.HasMember("enum")) {
-            auto enums = new map<string, int>();
-            auto& jenum = item["enum"];
-            for(auto it = jenum.MemberBegin(); it != jenum.MemberEnd(); it++) {
-                enums->insert(pair<string, int>(it->name.GetString(), it->value.GetInt()));
-            }
-            proto->setEnums(enums);
-        }
-        if(item.HasMember("field")) {
-            auto fields = new vector<Field>();
-            auto& jfield = item["field"];
-            for(unsigned int i = 0; i < jfield.Size(); i++) {
-                fields->push_back(Field(jfield[i].GetString()));
-            }
-            proto->setFields(fields);
-        }
-        printf("load proto: %d %s\n", id, name->c_str());
-    }
 }
 
 const Proto* Loader::getProtoByName(const std::string& name) {
@@ -98,10 +59,31 @@ const Proto* Loader::getProtoById(int id) {
     return nullptr;
 }
 
-string Loader::fileToString(const string& path) {
+void Loader::addProtos(const string& package) {
+    _offset = 0;
+    while(hasNextWord()) {
+        if(peekAndCmpWord("RPC")) {
+            string rpcname = getWord();
+            string subname;
+            while((subname=getWord()) != "}") {
+                auto name = rename(package, rpcname, subname);
+                auto id = strToInt(getWord());
+                addOneProto(name, id);
+            }
+        }
+        else {
+            auto name = rename(package, getWord());
+            auto id = strToInt(getWord());
+            addOneProto(name, id);
+        }
+    }
+}
+
+void Loader::fileToContent(const string& path) {
     FILE *fp = fopen(path.c_str(), "r");
     if(!fp) {
-        return "";
+        _fileContent = "";
+        return;
     }
     fseek(fp,0,SEEK_END);
     auto sz = ftell(fp);
@@ -110,5 +92,127 @@ string Loader::fileToString(const string& path) {
     auto buffer = (char*)malloc(sizeof(char) * sz);
     auto rsz = fread(buffer, sizeof(char), sz, fp);
     fclose(fp);
-    return string(buffer, 0, rsz);
+    _fileContent = string(buffer, 0, rsz);
+}
+
+uint32_t Loader::strToInt(const std::string& str) {
+    uint32_t res = 0;
+    for(size_t i = 0; i < str.size(); i++) {
+        int n = str[i] - '0';
+        res = res * 10 + n;
+    }
+    return res;
+}
+
+inline bool Loader::isspace(char c) {
+    bool ischar = (c >= '0' && c <= '9') ||
+                 (c >= 'a' && c <= 'z') ||
+                 (c >= 'A' && c <= 'Z') ||
+                 (c == '_') ||
+                 (c == '}');
+    return !ischar;
+}
+
+bool Loader::peekWord(size_t& beg, size_t& len) {
+    auto& fc = _fileContent;
+    if(_offset >= fc.size()) {
+        return false;
+    }
+    size_t p = _offset;
+    while(isspace(fc[p])) {
+        if(++p >= fc.size()) {
+            return false;
+        }
+    }
+    beg = p;
+    while(p < fc.size() && !isspace(fc[p])) {
+        ++p;
+    }
+    len = p - beg;
+    return true;
+}
+
+bool Loader::hasNextWord() {
+    size_t beg, len;
+    return peekWord(beg, len);
+}
+
+bool Loader::peekAndCmpWord(const string& word) {
+    size_t beg, len;
+    if(!peekWord(beg, len)) {
+        return false;
+    }
+    if(len != word.size()) {
+        return false;
+    }
+    for(size_t i = 0; i < len; i++) {
+        if(word[i] != _fileContent[beg+i]) {
+            return false;
+        }
+    }
+    _offset = beg + len;
+    return true;
+}
+
+string Loader::getWord() {
+    size_t beg, len;
+    if(!peekWord(beg, len)) {
+        return "";
+    }
+    _offset = beg + len;
+    return string(_fileContent, beg, len);
+}
+
+string Loader::getLine() {
+    auto& fc = _fileContent;
+    size_t p = _offset;
+    while(isspace(fc[p])) {
+        ++p;
+    }
+    size_t beg = p;
+    while(fc[p] != '\n') {
+        ++p;
+    }
+    while(isspace(fc[p])) {
+        --p;
+    }
+    size_t len = p + 1 - beg;
+    _offset = beg + len;
+    return string(fc, beg, len);
+}
+
+string Loader::rename(const string& package, const string& subname1, const string& subname2) {
+    if(subname2 == "") {
+        return package + "_" + subname1;
+    }
+    else {
+        return package + "_" + subname1 + "_" + subname2;
+    }
+}
+
+void Loader::addOneProto(const string& name, int id) {
+    _name_to_id.insert(pair<string, int>(name, id));
+    // parse to Proto
+    Proto* proto = &_protos[id];
+    proto->setId(id);
+    proto->setName(new string(name));
+    // enum
+    if(peekAndCmpWord("enum")) {
+        auto enums = new map<string, int>();
+        string key;
+        int val;
+        while((key=getWord()) != "}") {
+            val = strToInt(getWord());
+            enums->insert(pair<string, int>(key, val));
+        }
+        proto->setEnums(enums);
+    }
+    // field
+    auto fields = new vector<Field>();
+    string line;
+    while((line=getLine()) != "}") {
+        fields->push_back(Field(line));
+    }
+    proto->setFields(fields);
+    printf("load proto: %d %s\n", id, name.c_str());
 }
