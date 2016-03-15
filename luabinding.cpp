@@ -8,6 +8,29 @@
 #include "Encoder.h"
 #include "Decoder.h"
 
+extern "C" {
+#if !defined(LUA_VERSION_NUM) || LUA_VERSION_NUM < 502
+    static void luaL_checkversion(lua_State *l) {
+    }
+
+    static void luaL_setfuncs (lua_State *l, const luaL_Reg *reg, int nup) {
+        int i;
+        luaL_checkstack(l, nup, "too many upvalues");
+        for (; reg->name != NULL; reg++) {  /* fill the table with given functions */
+            for (i = 0; i < nup; i++)  /* copy upvalues to the top */
+                lua_pushvalue(l, -nup);
+            lua_pushcclosure(l, reg->func, nup);  /* closure with those upvalues */
+            lua_setfield(l, -(nup + 2), reg->name);
+        }
+        lua_pop(l, nup);  /* remove upvalues */
+    }
+
+    #define lua_rawlen lua_objlen
+    #define luaL_newlibtable(L, l) lua_createtable(L, 0, sizeof(l)/sizeof((l)[0]) - 1)
+    #define luaL_newlib(L, l) (luaL_newlibtable(L, l), luaL_setfuncs(L, l, 0))
+#endif
+}
+
 bool isMap(lua_State* L);
 void tableToMap(lua_State* L, int index, rproto::Map* map);
 void tableToVec(lua_State* L, int index, rproto::Vec* vec);
@@ -251,7 +274,6 @@ extern "C"
 
     int luaopen_rproto(lua_State* L) {
         luaL_checkversion(L);
-        luaL_openlibs(L);
 
         struct luaL_Reg funcs[] = {
             {"newByteArray", lnewByteArray},
