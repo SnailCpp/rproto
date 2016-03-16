@@ -1,6 +1,5 @@
-#include <lua.hpp>
+#include "luabinding.h"
 #include <assert.h>
-
 #include "Value.h"
 #include "ByteArray.h"
 #include "Proto.h"
