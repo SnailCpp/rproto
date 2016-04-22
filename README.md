@@ -64,3 +64,5 @@
 		end
 	end
 
+## g++
+g++ -std=c++11 -shared -fPIC ByteArray.cpp Decoder.cpp Encoder.cpp Loader.cpp luabinding.cpp Proto.cpp Value.cpp -I/usr/local/include -I../../Develop/lua-5.3.2/src -o rproto.so -ldl
