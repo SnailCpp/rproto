@@ -18,7 +18,7 @@ Encoder::~Encoder() {
 }
 
 int Encoder::encode(ByteArray* bytes, const string& name, const Map& dict) {
-    auto proto = _loader->getProtoByName(name);
+    auto proto = _loader->getProtoByFullName(name);
     if(proto == nullptr) {
         return -1;
     }
@@ -48,7 +48,7 @@ int Encoder::writeStruct(ByteArray* bytes, const Map& value, const Proto* struc)
         auto& value = it->second;
 
         if(*type == "struct") {
-            auto sub_struc = _loader->getProtoByName(*(type+1));
+            auto sub_struc = _loader->getProtoByFullName(*(type+1));
             CHECK_RESULT(writeStruct(bytes, value.getMap(), sub_struc));
         }
         else if(*type == "list") {
@@ -74,7 +74,7 @@ int Encoder::writeList(ByteArray* bytes, const Vec& values, const EnumMap* enums
         }
     }
     else if(*type == "struct") {
-        auto struc = _loader->getProtoByName(*(type+1));
+        auto struc = _loader->getProtoByFullName(*(type+1));
         for(auto& item : values) {
             CHECK_RESULT(writeStruct(bytes, item.getMap(), struc));
         }

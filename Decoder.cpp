@@ -32,7 +32,11 @@ int Decoder::decode(const ByteArray& bytes, string& name, Map* dict) {
         return -1;
     }
 
-    name = proto->name();
+    dict->insert(Map::value_type("_id", Value(id)));
+    dict->insert(Map::value_type("_package", Value(new string(proto->package()))));
+    dict->insert(Map::value_type("_name", Value(new string(proto->name()))));
+    dict->insert(Map::value_type("_type", Value(new string(proto->type()))));
+    name = _loader->fullName(proto->package(), proto->name(), proto->type());
     int result = readStruct(bytes, dict, proto);
     return result;
 }
@@ -50,7 +54,7 @@ int Decoder::readStruct(const ByteArray& bytes, Map* value, const Proto* struc) 
         auto type = field.typeIter();
 
         if(*type == "struct") {
-            auto sub_struc = _loader->getProtoByName(*(type+1));
+            auto sub_struc = _loader->getProtoByFullName(*(type+1));
             auto item = new Map();
             CHECK_RESULT_FREE(readStruct(bytes, item, sub_struc), item);
             value->insert(Map::value_type(name, Value(item)));
@@ -77,7 +81,7 @@ int Decoder::readStruct(const ByteArray& bytes, Map* value, const Proto* struc) 
 int Decoder::readList(const ByteArray& bytes, Vec* values, const EnumMap* enums, const TypeIter type) {
     int len = bytes.rInt16();
     if(*type == "struct") {
-        auto struc = _loader->getProtoByName(*(type+1));
+        auto struc = _loader->getProtoByFullName(*(type+1));
         for(int i = 0; i < len; i++) {
             auto item = new Map();
             CHECK_RESULT_FREE(readStruct(bytes, item, struc), item);

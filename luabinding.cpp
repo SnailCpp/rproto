@@ -231,11 +231,18 @@ extern "C"
         return 1;
     }
 
-    static int lLoader_setup(lua_State* L) {
+    static int lLoader_loadFromFolder(lua_State* L) {
         rproto::Loader* loader = *(rproto::Loader**)lua_touserdata(L, 1);
         auto path = lua_tostring(L, 2);
-        loader->setProtoPath(path);
-        loader->loadAllProtos();
+        loader->loadFromFolder(path);
+        return 0;
+    }
+
+    static int lLoader_loadFromString(lua_Stage* L) {
+        rproto::Loader* loader = *(rproto::Loader**)lua_touserdata(L, 1);
+        auto package = lua_tostring(L, 2);
+        auto content = lua_tostring(L, 3);
+        loader->loadFromString(package, content);
         return 0;
     }
 
@@ -290,7 +297,8 @@ extern "C"
         };
 
         struct luaL_Reg f_Loader[] = {
-            {"setup", lLoader_setup},
+            {"loadFromFolder", lLoader_loadFromFolder},
+            {"loadFromString", lLoader_loadFromString},
             {NULL, NULL}
         };
 

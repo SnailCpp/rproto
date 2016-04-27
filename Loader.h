@@ -16,15 +16,26 @@ public:
     Loader();
     ~Loader();
 
-    void setProtoPath(const std::string& path);
-    void loadAllProtos();
+    void loadFromFolder(const std::string& path);
+    void loadFromString(const std::string& package,
+                        const std::string& str);
 
-    const Proto* getProtoByName(const std::string& name);
+    std::string fullName(const std::string& package,
+                          const std::string& name,
+                          const std::string& type);
+    int getIdByFullName(const std::string& fullname);
+    int getIdByName(const std::string& package,
+                    const std::string& name,
+                    const std::string& type);
+    const Proto* getProtoByFullName(const std::string& fullname);
+    const Proto* getProtoByName(const std::string& package,
+                                const std::string& name,
+                                const std::string& type);
     const Proto* getProtoById(int id);
 
 private:
     void addProtos(const std::string& package);
-    void fileToContent(const std::string& path);
+    std::string fileToContent(const std::string& path);
     uint32_t strToInt(const std::string& str);
     bool isspace(char c);
     bool peekWord(size_t& beg, size_t& len);
@@ -32,17 +43,17 @@ private:
     bool peekAndCmpWord(const std::string& word);
     std::string getWord();
     std::string getLine();
-    std::string rename(const std::string& package,
-                        const std::string& subname1,
-                        const std::string& subname2 = "");
-    void addOneProto(const std::string& name, int id, bool isrpc);
+    void addOneProto(const std::string& package,
+                     const std::string& name,
+                     const std::string& type,
+                     int id,
+                     bool isrpc);
 
-    std::string _fileContent;
+    std::string _protoStr;
     size_t _offset;
 
-    std::string _path;
     Proto _protos[Proto_Index_Max+1];
-    std::map<std::string, int> _name_to_id;
+    std::map<std::string, int> _name2Id;
 };
 
 }

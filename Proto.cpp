@@ -53,8 +53,16 @@ int Proto::id() const {
     return _id;
 }
 
+const std::string& Proto::package() const {
+    return *_package;
+}
+
 const std::string& Proto::name() const {
     return *_name;
+}
+
+const std::string& Proto::type() const {
+    return *_type;
 }
 
 const EnumMap* Proto::enums() const {
@@ -69,8 +77,16 @@ void Proto::setId(int id) {
     _id = id;
 }
 
+void Proto::setPackage(string* package) {
+    _package = package;
+}
+
 void Proto::setName(string* name) {
     _name = name;
+}
+
+void Proto::setType(string* type) {
+    _type = type;
 }
 
 void Proto::setEnums(map<string, int>* enums) {

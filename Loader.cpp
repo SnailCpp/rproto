@@ -12,16 +12,13 @@ Loader::Loader() {
 Loader::~Loader() {
 }
 
-void Loader::setProtoPath(const string& path) {
-    char end = path[path.size()-1];
-    _path = (end != '/' && end != '\\') ? path + "/" : path;
-}
+void Loader::loadFromFolder(const string& path) {
+    char endc = path[path.size()-1];
+    string fpath = (endc != '/' && endc != '\\') ? path + "/" : path;
 
-void Loader::loadAllProtos() {
-    string path_ALL(_path + "_ALL");
-
+    string path_ALL(fpath + "_ALL");
     // only for unix
-    string cmd("ls -1 " + _path + ">" + path_ALL);
+    string cmd("ls -1 " + path + ">" + path_ALL);
     system(cmd.c_str());
 
     FILE *fp = fopen(path_ALL.c_str(), "r");
@@ -37,19 +34,45 @@ void Loader::loadAllProtos() {
         }
         if(buffer[0] != '_') {
             string package(buffer);
-            fileToContent(_path + package);
-            addProtos(package);
+            string content(fileToContent(fpath + package));
+            loadFromString(package, content);
         }
     }
     fclose(fp);
 }
 
-const Proto* Loader::getProtoByName(const std::string& name) {
-    auto it = _name_to_id.find(name);
-    if(it == _name_to_id.end()) {
-        return nullptr;
+void Loader::loadFromString(const string& package, const string& str) {
+    _protoStr = str;
+    addProtos(package);
+}
+
+string Loader::fullName(const string& package, const string& name, const string& type) {
+    if(type == "") {
+        return package + "." + name;
+    } else {
+        return package + "." + name + "." + type;
     }
-    return getProtoById(it->second);
+}
+
+int Loader::getIdByFullName(const string& fullname) {
+    auto it = _name2Id.find(fullname);
+    if(it == _name2Id.end()) {
+        return -1;
+    }
+    return it->second;
+}
+
+int Loader::getIdByName(const string& package, const string& name, const string& type) {
+    return getIdByFullName(fullName(package, name, type));
+}
+
+const Proto* Loader::getProtoByFullName(const string& fullname) {
+    int id = getIdByFullName(fullname);
+    return getProtoById(id);
+}
+
+const Proto* Loader::getProtoByName(const string& package, const string& name, const string& type) {
+    return getProtoByFullName(fullName(package, name, type));
 }
 
 const Proto* Loader::getProtoById(int id) {
@@ -63,27 +86,28 @@ void Loader::addProtos(const string& package) {
     _offset = 0;
     while(hasNextWord()) {
         if(peekAndCmpWord("RPC")) {
-            string rpcname = getWord();
-            string subname;
-            while((subname=getWord()) != "}") {
-                auto name = rename(package, rpcname, subname);
+            string name = getWord();
+            string type;
+            while((type=getWord()) != "}") {
+                //auto name = rename(package, rpcname, subname);
                 auto id = strToInt(getWord());
-                addOneProto(name, id, true);
+                addOneProto(package, name, type, id, true);
             }
         }
         else {
-            auto name = rename(package, getWord());
+            auto name = getWord();
+            //auto name = rename(package, getWord());
             auto id = strToInt(getWord());
-            addOneProto(name, id, false);
+            addOneProto(package, name, "", id, false);
         }
     }
 }
 
-void Loader::fileToContent(const string& path) {
+string Loader::fileToContent(const string& path) {
     FILE *fp = fopen(path.c_str(), "r");
     if(!fp) {
-        _fileContent = "";
-        return;
+        _protoStr = "";
+        return "";
     }
     fseek(fp,0,SEEK_END);
     auto sz = ftell(fp);
@@ -92,7 +116,7 @@ void Loader::fileToContent(const string& path) {
     auto buffer = (char*)malloc(sizeof(char) * sz);
     auto rsz = fread(buffer, sizeof(char), sz, fp);
     fclose(fp);
-    _fileContent = string(buffer, 0, rsz);
+    return string(buffer, 0, rsz);
 }
 
 uint32_t Loader::strToInt(const std::string& str) {
@@ -114,7 +138,7 @@ inline bool Loader::isspace(char c) {
 }
 
 bool Loader::peekWord(size_t& beg, size_t& len) {
-    auto& fc = _fileContent;
+    auto& fc = _protoStr;
     if(_offset >= fc.size()) {
         return false;
     }
@@ -146,7 +170,7 @@ bool Loader::peekAndCmpWord(const string& word) {
         return false;
     }
     for(size_t i = 0; i < len; i++) {
-        if(word[i] != _fileContent[beg+i]) {
+        if(word[i] != _protoStr[beg+i]) {
             return false;
         }
     }
@@ -160,11 +184,11 @@ string Loader::getWord() {
         return "";
     }
     _offset = beg + len;
-    return string(_fileContent, beg, len);
+    return string(_protoStr, beg, len);
 }
 
 string Loader::getLine() {
-    auto& fc = _fileContent;
+    auto& fc = _protoStr;
     size_t p = _offset;
     while(isspace(fc[p])) {
         ++p;
@@ -181,21 +205,20 @@ string Loader::getLine() {
     return string(fc, beg, len);
 }
 
-string Loader::rename(const string& package, const string& subname1, const string& subname2) {
-    if(subname2 == "") {
-        return package + "_" + subname1;
-    }
-    else {
-        return package + "_" + subname1 + "_" + subname2;
-    }
-}
+void Loader::addOneProto(const string& package,
+                         const string& name,
+                         const string& type,
+                         int id,
+                         bool isrpc) {
+    auto fName = fullName(package, name, type);
+    _name2Id.insert(pair<string, int>(fName, id));
 
-void Loader::addOneProto(const string& name, int id, bool isrpc) {
-    _name_to_id.insert(pair<string, int>(name, id));
     // parse to Proto
     Proto* proto = &_protos[id];
     proto->setId(id);
+    proto->setPackage(new string(package));
     proto->setName(new string(name));
+    proto->setType(new string(type));
     // enum
     if(peekAndCmpWord("enum")) {
         auto enums = new map<string, int>();
@@ -209,7 +232,7 @@ void Loader::addOneProto(const string& name, int id, bool isrpc) {
     }
     // field
     auto fields = new vector<Field>();
-    if(isrpc) { // rpc has one more field,session
+    if(isrpc) { // rpc has one more field, _session
         fields->push_back(Field("_session int"));
     }
     string line;
@@ -217,5 +240,6 @@ void Loader::addOneProto(const string& name, int id, bool isrpc) {
         fields->push_back(Field(line));
     }
     proto->setFields(fields);
-    printf("load proto: %d %s\n", id, name.c_str());
+    // debug
+    printf("load proto: %d %s\n", id, fName.c_str());
 }
