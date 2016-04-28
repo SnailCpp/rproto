@@ -233,15 +233,15 @@ extern "C"
 
     static int lLoader_loadFromFolder(lua_State* L) {
         rproto::Loader* loader = *(rproto::Loader**)lua_touserdata(L, 1);
-        auto path = lua_tostring(L, 2);
+        std::string path(lua_tostring(L, 2));
         loader->loadFromFolder(path);
         return 0;
     }
 
-    static int lLoader_loadFromString(lua_Stage* L) {
+    static int lLoader_loadFromString(lua_State* L) {
         rproto::Loader* loader = *(rproto::Loader**)lua_touserdata(L, 1);
-        auto package = lua_tostring(L, 2);
-        auto content = lua_tostring(L, 3);
+        std::string package(lua_tostring(L, 2));
+        std::string content(lua_tostring(L, 3));
         loader->loadFromString(package, content);
         return 0;
     }
