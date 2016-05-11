@@ -1,4 +1,4 @@
-#include "luabinding.h"
+#include "lrproto.h"
 #include <assert.h>
 #include "Value.h"
 #include "ByteArray.h"
@@ -351,8 +351,11 @@ extern "C"
         lua_pushvalue(L, -2);
         lua_settable(L, -3);
         luaL_setfuncs(L, f_Decoder, 0);
-
+#if !defined(LUA_VERSION_NUM) || LUA_VERSION_NUM < 502
+		luaL_register(L, "rproto", funcs);
+#else
         luaL_newlib(L, funcs);
+#endif
         return 1;
     }
 }

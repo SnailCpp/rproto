@@ -5,7 +5,11 @@
 
 namespace rproto {
 
+#ifdef _MSC_VER
+typedef char byte;
+#else
 typedef uint8_t byte;
+#endif
 
 enum class ByteEndian {
     BIG,
